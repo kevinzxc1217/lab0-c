@@ -242,7 +242,7 @@ void q_sort(struct list_head *head, bool descend) {
     list_cut_position(&list_new, list_cur, slow); 
     q_sort(&list_new, false);
     q_sort(head, false);
-    q_merge_2list(head, &list_new);
+    q_merge_2_list(head, &list_new);
     
     return ;
 }
@@ -314,7 +314,7 @@ int q_merge(struct list_head *head, bool descend)
     struct list_head *list_next = list_cur -> next;
     while(list_next != head){
         contex_next = list_entry(list_next, queue_contex_t, chain);
-        q_merge_2list(contex_cur -> q, contex_next -> q);
+        q_merge_2_list(contex_cur -> q, contex_next -> q);
         list_next = list_next -> next;
     }
     int contex_size = q_size(contex_cur -> q);
