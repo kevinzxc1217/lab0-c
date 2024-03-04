@@ -9,7 +9,7 @@
  * following line.
  *   cppcheck-suppress nullPointer
  */
-
+void q_merge_2_list(struct list_head *list_1, struct list_head *list_2);
 
 /* Create an empty queue */
 struct list_head *q_new()
@@ -322,7 +322,7 @@ int q_merge(struct list_head *head, bool descend)
     return contex_size;
 }
 
-void q_merge_2list(struct list_head *list_1, struct list_head *list_2){
+void q_merge_2_list(struct list_head *list_1, struct list_head *list_2){
     
     struct list_head list_result;
     INIT_LIST_HEAD(&list_result);
