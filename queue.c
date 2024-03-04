@@ -329,7 +329,7 @@ void q_merge_2list(struct list_head *list_1, struct list_head *list_2){
     while(!list_empty(list_1) && !list_empty(list_2)){
         element_t *elem_1 = list_entry(list_1->next, element_t, list);
         element_t *elem_2 = list_entry(list_2->next, element_t, list);
-        
+         
         if(strcmp(elem_1 -> value, elem_2 -> value) < 0)
             list_move_tail(list_1 -> next, &list_result);
         else
