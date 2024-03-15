@@ -226,7 +226,26 @@ void q_reverseK(struct list_head *head, int k)
 }
 
 /* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend) {}
+void q_sort(struct list_head *head, bool descend) {
+    
+    if(!head || list_is_singular(head) || list_empty(head))
+        return ;
+    struct list_head *list_cur = head;
+    struct list_head *fast = head -> next;
+    struct list_head *slow = head -> next;
+    struct list_head list_new;
+    INIT_LIST_HEAD(&list_new);
+    while(fast -> next != head && fast -> next -> next != head){
+        fast = fast -> next -> next;
+        slow = slow -> next;
+    }
+    list_cut_position(&list_new, list_cur, slow); 
+    q_sort(&list_new, false);
+    q_sort(head, false);
+    q_merge_2_list(head, &list_new);
+    
+    return ;
+}
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
