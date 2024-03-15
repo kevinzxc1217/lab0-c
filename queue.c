@@ -10,6 +10,7 @@
  *   cppcheck-suppress nullPointer
  */
 
+void q_merge_2_list(struct list_head *list_1, struct list_head *list_2);
 
 /* Create an empty queue */
 struct list_head *q_new()
@@ -289,4 +290,24 @@ int q_merge(struct list_head *head, bool descend)
 {
     // https://leetcode.com/problems/merge-k-sorted-lists/
     return 0;
+}
+
+void q_merge_2_list(struct list_head *list_1, struct list_head *list_2){
+    
+    struct list_head list_result;
+    INIT_LIST_HEAD(&list_result);
+    while(!list_empty(list_1) && !list_empty(list_2)){
+        element_t *elem_1 = list_entry(list_1->next, element_t, list);
+        element_t *elem_2 = list_entry(list_2->next, element_t, list);
+         
+        if(strcmp(elem_1 -> value, elem_2 -> value) < 0)
+            list_move_tail(list_1 -> next, &list_result);
+        else
+            list_move_tail(list_2 -> next, &list_result);
+    }
+    if(!list_empty(list_1))
+        list_splice_tail_init(list_1, &list_result);
+    else if(!list_empty(list_2))
+        list_splice_tail_init(list_2, &list_result);
+    list_splice_tail_init(&list_result, list_1);
 }
