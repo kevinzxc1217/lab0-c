@@ -84,7 +84,60 @@ typedef enum {
     POS_HEAD,
 } position_t;
 /* Forward declarations */
+void q_shuffle(struct list_head *head);
+
+void q_shuffle(struct list_head *head)
+{
+    if(!head)
+        return;
+        
+    int len = q_size(head);
+    int i = len - 1;
+    int tmp_value;
+    
+    struct list_head *cur = head -> next;
+    struct list_head *tmp = head -> prev;
+    while(i > 0){
+        int index = rand() % (i+1);
+        while(index){
+            cur = cur -> next;
+            index--;
+        }
+        element_t *ele_cur = list_entry(cur, element_t, list);
+        element_t *ele_tmp = list_entry(tmp, element_t, list);
+        
+        tmp_value = *(ele_tmp -> value);
+        *(ele_tmp -> value) = *(ele_cur -> value);
+        *(ele_cur -> value) = tmp_value;
+        
+        tmp = tmp -> prev;
+        cur = head -> next;
+        i--;
+    }
+  
+}
+
+
 static bool q_show(int vlevel);
+
+static bool do_shuffle(int argc, char *argv[])
+{
+    if (argc != 1) {
+        report(1, "%s takes no arguments", argv[0]);
+        return false;
+    }
+
+    if (!current || !current->q)
+        report(3, "Warning: Calling shuffle on null queue");
+    error_check();
+    if (q_size(current->q) < 2)
+        report(3, "Warning: Calling shuffle on single queue");
+    error_check();
+    if (exception_setup(true))
+        q_shuffle(current->q);
+    q_show(3);
+    return !error_check();
+}
 
 static bool do_free(int argc, char *argv[])
 {
@@ -1014,6 +1067,8 @@ static bool do_next(int argc, char *argv[])
 
 static void console_init()
 {
+    ADD_COMMAND(shuffle, "Do the Fisher–Yates Shuffle algorithm", "");
+    
     ADD_COMMAND(new, "Create new queue", "");
     ADD_COMMAND(free, "Delete queue", "");
     ADD_COMMAND(prev, "Switch to previous queue", "");
