@@ -3,4 +3,4 @@ option malloc 0
 
 new
 ih RAND 10000
-time list_sort
+time tim_sort
