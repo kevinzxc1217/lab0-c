@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include "list.h"
-#include "sort_impl.h"
+#include "tim_sort.h"
 
 static inline size_t run_size(struct list_head *head)
 {
