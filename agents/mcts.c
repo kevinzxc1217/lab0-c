@@ -3,16 +3,22 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <limits.h>
 
 #include "game.h"
 #include "mcts.h"
 #include "util.h"
 
+#define FRACTIONAL_BITS 20
+
+
 struct node {
     int move;
     char player;
     int n_visits;
-    double score;
+    unsigned long score;
     struct node *parent;
     struct node *children[N_GRIDS];
 };
@@ -37,22 +43,72 @@ static void free_node(struct node *node)
     free(node);
 }
 
-static inline double uct_score(int n_total, int n_visits, double score)
+
+unsigned long fixed_sqrt(unsigned long x)
 {
+    if (x == 0UL)
+        return 0;
+    unsigned long guess = x >> 1;
+    unsigned long previous_guess;
+
+    unsigned long epsilon = 1;
+
+    do {
+        previous_guess = guess;
+        guess = (guess + (x << FRACTIONAL_BITS) / guess) >> 1;
+    } while (guess - previous_guess > epsilon);
+
+    return guess;
+}
+
+
+
+unsigned long fixed_log(unsigned long x) {
+    if (x == 0UL)
+        return 0;
+
+    unsigned long div = ((x + (1 << FRACTIONAL_BITS)));
+    unsigned long div2 = div  >> FRACTIONAL_BITS;
+     if (div2 == 0)
+        div2 = 1;
+    unsigned long u = (x - (1 << FRACTIONAL_BITS)) / div2;
+
+    unsigned long sum = 0;
+    unsigned long u_squared = u * u;
+    u_squared += 1UL << (FRACTIONAL_BITS - 1);
+    u_squared >>= FRACTIONAL_BITS;
+
+    for (int n = 0; n < 10; n++) {
+        unsigned long term = ((2 * u)) / (2 * n + 1);
+        sum += term;
+        u *= u_squared;
+        u >>= FRACTIONAL_BITS; 
+    }
+
+    return sum;
+}
+
+
+
+static inline unsigned long uct_score(int n_total, int n_visits, unsigned long score)
+{
+  
     if (n_visits == 0)
-        return DBL_MAX;
-    return score / n_visits +
-           EXPLORATION_FACTOR * sqrt(log(n_total) / n_visits);
+        return ULONG_MAX;
+
+    unsigned long ret = score / n_visits +
+          ((fixed_sqrt(2 << FRACTIONAL_BITS) * fixed_sqrt(fixed_log(n_total << FRACTIONAL_BITS) / n_visits)) >> FRACTIONAL_BITS);
+    return ret;
 }
 
 static struct node *select_move(struct node *node)
 {
     struct node *best_node = NULL;
-    double best_score = -1;
+    unsigned long best_score = 0;
     for (int i = 0; i < N_GRIDS; i++) {
         if (!node->children[i])
             continue;
-        double score = uct_score(node->n_visits, node->children[i]->n_visits,
+        unsigned long score = uct_score(node->n_visits, node->children[i]->n_visits,
                                  node->children[i]->score);
         if (score > best_score) {
             best_score = score;
@@ -62,7 +118,7 @@ static struct node *select_move(struct node *node)
     return best_node;
 }
 
-static double simulate(char *table, char player)
+static unsigned long simulate(char *table, char player)
 {
     char win;
     char current_player = player;
@@ -84,16 +140,16 @@ static double simulate(char *table, char player)
             return calculate_win_value(win, player);
         current_player ^= 'O' ^ 'X';
     }
-    return 0.5;
+    return 1<<(FRACTIONAL_BITS-1);
 }
 
-static void backpropagate(struct node *node, double score)
+static void backpropagate(struct node *node, unsigned long score)
 {
     while (node) {
         node->n_visits++;
         node->score += score;
         node = node->parent;
-        score = 1 - score;
+        score = (1 << FRACTIONAL_BITS) - score;
     }
 }
 
@@ -109,8 +165,24 @@ static void expand(struct node *node, char *table)
     free(moves);
 }
 
+double fixed_to_float(unsigned long fixed_point) {
+    return (double)(fixed_point) / (1 << FRACTIONAL_BITS);
+}
+
+
 int mcts(char *table, char player)
 {
+    
+    /* check function
+    unsigned long sqrt = fixed_sqrt(16<<FRACTIONAL_BITS);
+    printf("fixed_sqrt: %lu\n",sqrt);
+    printf("float_sqrt: %f\n",fixed_to_float(sqrt));    
+    
+    
+    unsigned long lg = fixed_log(16<<FRACTIONAL_BITS);
+    printf("fixed_log: %lu\n",lg);
+    printf("float_log: %f\n",fixed_to_float(lg));*/
+
     char win;
     struct node *root = new_node(-1, player, NULL);
     for (int i = 0; i < ITERATIONS; i++) {
@@ -119,13 +191,13 @@ int mcts(char *table, char player)
         memcpy(temp_table, table, N_GRIDS);
         while (1) {
             if ((win = check_win(temp_table)) != ' ') {
-                double score =
+                unsigned long score =
                     calculate_win_value(win, node->player ^ 'O' ^ 'X');
                 backpropagate(node, score);
                 break;
             }
             if (node->n_visits == 0) {
-                double score = simulate(temp_table, node->player);
+                unsigned long score = simulate(temp_table, node->player);
                 backpropagate(node, score);
                 break;
             }

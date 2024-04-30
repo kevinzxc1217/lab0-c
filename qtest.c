@@ -181,7 +181,6 @@ static bool do_ttt()
     int move;
     int first_move = 1;
 
-    negamax_init();
 
     while (1) {
         char win = check_win(table);
@@ -196,7 +195,9 @@ static bool do_ttt()
         }
 
         if (turn == ai) {
-            int move = negamax_predict(table, ai).move;
+            //int move = mcts(table, ai);
+            int move = mcts(table, ai)%16;
+            //printf("%d",move);
             if (move != -1) {
                 table[move] = ai;
                 record_move(move);
@@ -209,7 +210,7 @@ static bool do_ttt()
                     first_move = 0;
                 }
                 else
-                    move = negamax_predict(table, turn).move;
+                    move = mcts(table, turn);
                     
                 if (move != -1) {
                     table[move] = turn;

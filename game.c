@@ -10,6 +10,8 @@
     ((i) < 0 || (j) < 0 || (i) > BOARD_SIZE || (j) > BOARD_SIZE \
          ? (else_value)                                         \
          : (table)[GET_INDEX(i, j)])
+         
+#define FRACTIONAL_BITS 20
 
 _Static_assert(BOARD_SIZE <= 26, "Board size must not be greater than 26");
 _Static_assert(BOARD_SIZE > 0, "Board size must be greater than 0");
@@ -62,13 +64,13 @@ char check_win(char *t)
     return 'D';
 }
 
-double calculate_win_value(char win, char player)
+unsigned long calculate_win_value(char win, char player)
 {
     if (win == player)
-        return 1.0;
+        return 1 << FRACTIONAL_BITS;
     if (win == (player ^ 'O' ^ 'X'))
-        return 0.0;
-    return 0.5;
+        return 0;
+    return 1 << (FRACTIONAL_BITS-1);
 }
 
 int *available_moves(char *table)
