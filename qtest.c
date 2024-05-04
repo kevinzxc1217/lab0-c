@@ -26,9 +26,6 @@
 #include "list_sort.h"
 #include "tim_sort.h"
 
-#include "agents/mcts.h"
-#include "agents/negamax.h"
-#include "game.h"
 
 /* Shannon entropy */
 extern double shannon_entropy(const uint8_t *input_data);
@@ -53,7 +50,7 @@ extern int show_entropy;
 
 #include "console.h"
 #include "report.h"
-
+#include "coro.c"
 /* Settable parameters */
 
 #define HISTORY_LEN 20
@@ -90,27 +87,8 @@ typedef enum {
     POS_TAIL,
     POS_HEAD,
 } position_t;
-static int move_record[N_GRIDS];
-static int move_count = 0;
 static int ai_vs_ai = 0;
 
-static void record_move(int move)
-{
-    move_record[move_count++] = move;
-}
-
-static void print_moves()
-{
-    printf("Moves: ");
-    for (int i = 0; i < move_count; i++) {
-        printf("%c%d", 'A' + GET_COL(move_record[i]),
-               1 + GET_ROW(move_record[i]));
-        if (i < move_count - 1) {
-            printf(" -> ");
-        }
-    }
-    printf("\n");
-}
 
 static int get_input(char player)
 {
@@ -178,10 +156,8 @@ static bool do_ttt()
     memset(table, ' ', N_GRIDS);
     char turn = 'X';
     char ai = 'O';
-    int move;
-    int first_move = 1;
-
-
+    negamax_init();
+    
     while (1) {
         char win = check_win(table);
         if (win == 'D') {
@@ -194,30 +170,21 @@ static bool do_ttt()
             break;
         }
 
-        if (turn == ai) {
-            //int move = mcts(table, ai);
-            int move = mcts(table, ai)%16;
-            //printf("%d",move);
-            if (move != -1) {
-                table[move] = ai;
-                record_move(move);
-            }
-
-        } else {
-            if(ai_vs_ai){ 
-                if(first_move){
-                    move = rand() % (BOARD_SIZE*BOARD_SIZE);
-                    first_move = 0;
-                }
-                else
-                    move = mcts(table, turn);
-                    
+        if(ai_vs_ai){
+            coro();
+            // print_moves();
+            break;
+        }
+        else{
+            if (turn == ai) {
+                int move = mcts(table, ai);
                 if (move != -1) {
-                    table[move] = turn;
+                    table[move] = ai;
                     record_move(move);
-                }            
-            }
-            else{
+                }
+
+            } 
+            else {
                 draw_board(table);
                 int move;
                 while (1) {
@@ -230,22 +197,10 @@ static bool do_ttt()
                 table[move] = turn;
                 record_move(move);
             }
-        }
-        turn = turn == 'X' ? 'O' : 'X';
-        if (ai_vs_ai) {
-            draw_board(table);
-            time_t rawtime;
-            struct tm *timeinfo;
-            time(&rawtime);
-            timeinfo = localtime(&rawtime);
-            char buffer[80];
-            strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", timeinfo);
-            printf("%s\n",buffer);
+            turn = turn == 'X' ? 'O' : 'X';
         }
     }
     print_moves();
-    move_count = 0;
-    first_move = 1;
     return true;
 }
 /* Forward declarations */

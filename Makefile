@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -O1 -g -Wall -Werror -Idudect -I.
-
+CFLAGS = -O0 -Wall
 # Emit a warning should any variable-length array be found within the code.
 CFLAGS += -Wvla
 
@@ -61,6 +61,9 @@ qtest: $(OBJS)
 	@echo "  CC\t$@\n"
 	$(Q)$(CC) -o $@ $(CFLAGS) -c -MMD -MF .$@.d $<
 
+coro: coro.c
+	$(CC) $(CFLAGS) -o coro coro.c
+
 check: qtest
 	./$< -v 3 -f traces/trace-eg.cmd
 
@@ -93,6 +96,7 @@ clean:
 	rm -rf .$(DUT_DIR)
 	rm -rf .$(AGENTS_DIR)
 	rm -rf *.dSYM
+	rm -f coro
 	(cd traces; rm -f *~)
 
 distclean: clean
