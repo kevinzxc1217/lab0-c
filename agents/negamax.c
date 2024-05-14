@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include "game.h"
-#include "agents/negamax.h"
+#include "negamax.h"
 #include "util.h"
 #include "zobrist.h"
 
